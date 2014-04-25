@@ -46,6 +46,10 @@ public class CocoaPodsBuilder extends Builder {
    */
   @Extension
   public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+	public DescriptorImpl() {
+		load();
+	}
+	
     /**
      * This human readable name is used in the configuration screen.
      *
@@ -67,6 +71,8 @@ public class CocoaPodsBuilder extends Builder {
     public boolean isApplicable(final Class<?extends AbstractProject> aClass) {
       return true;
     }
+    
+    
   }
 
   /**
@@ -75,9 +81,15 @@ public class CocoaPodsBuilder extends Builder {
   private final boolean cleanPods;
 
   /**
+   * If checked the "pod" will skip running `pod repo update`
+   */
+  private final boolean skipUpdate;
+  
+  /**
    * if {@code true} cocoapods will be verbose in the log trail.
    */
   private final boolean verbose;
+  
 
 /**
    * Creates a new CocoaPodsBuilder object.
@@ -86,8 +98,9 @@ public class CocoaPodsBuilder extends Builder {
    *   be removed before refreshing pods
    */
   @DataBoundConstructor
-  public CocoaPodsBuilder(final boolean cleanpods, final boolean verbose) {
-    cleanPods = cleanpods;
+  public CocoaPodsBuilder(final boolean cleanPods, final boolean skipUpdate, final boolean verbose) {
+    this.cleanPods = cleanPods;
+    this.skipUpdate = skipUpdate;
     this.verbose = verbose;
   }
 
@@ -124,19 +137,29 @@ public class CocoaPodsBuilder extends Builder {
         args.addTokenized("touch Pods");
         args.addTokenized("rm -r -f Pods");
       }
-
-      args.addTokenized("pod repo update");
+      
+      if (! skipUpdate) {
+    	  args.addTokenized("pod repo update");
+      }
 
       final ArgumentListBuilder args2 = new ArgumentListBuilder();
+      
       args2.addTokenized("pod install");
+
+      if (skipUpdate) {
+    	  args2.add("--no-repo-update");
+      }
 
       if (verbose) {
 	      args2.add("--verbose");
       }
-
-      final int resultInstall =
-        launcher.decorateFor(build.getBuiltOn()).launch().cmds(args).envs(env)
-                 .stdout(listener).pwd(build.getModuleRoot()).join();
+      
+      int resultInstall = 0;
+      if (args.toList().size() > 0) {
+    	  resultInstall =
+    			  launcher.decorateFor(build.getBuiltOn()).launch().cmds(args).envs(env)
+    			  .stdout(listener).pwd(build.getModuleRoot()).join();
+      }
       final int resultUpdate  =
         launcher.decorateFor(build.getBuiltOn()).launch().cmds(args2).envs(env)
                  .stdout(listener).pwd(build.getModuleRoot()).join();
@@ -149,5 +172,17 @@ public class CocoaPodsBuilder extends Builder {
     }
 
     return false;
+  }
+
+  public boolean isCleanPods() {
+	  return cleanPods;
+  }
+
+  public boolean isSkipUpdate() {
+	  return skipUpdate;
+  }
+
+  public boolean isVerbose() {
+	  return verbose;
   }
 }
