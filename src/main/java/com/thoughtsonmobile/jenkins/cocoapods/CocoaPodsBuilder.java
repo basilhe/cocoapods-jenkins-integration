@@ -134,12 +134,12 @@ public class CocoaPodsBuilder extends Builder {
       final ArgumentListBuilder args = new ArgumentListBuilder();
 
       if (cleanPods) {
-        args.addTokenized("touch Pods");
-        args.addTokenized("rm -r -f Pods");
+        args.addTokenized("touch Pods;");
+        args.addTokenized("rm -r -f Pods;");
       }
       
       if (! skipUpdate) {
-    	  args.addTokenized("pod repo update");
+    	  args.addTokenized("pod repo update;");
       }
 
       final ArgumentListBuilder args2 = new ArgumentListBuilder();
